@@ -1,2 +1,5 @@
 this telegram bot can write down your expences to google sheets<br />
-watch more how it works on https://youtube.com/@sepezho
+demo (ru) https://youtu.be/vBJ0yY5X99o
+
+
+
