@@ -55,8 +55,7 @@ const tableCall = (newCellData) => {
       } else {
         console.log('Movie list from Google Sheets:');
         const lastRow = (data.data.values[data.data.values.length - 1])
-
-
+        console.log(lastRow)
         let color = "#ffffff"
         let newCategory = null
         let negative = false
@@ -104,7 +103,6 @@ const tableCall = (newCellData) => {
           negative = true
         }
 
-
         newCellData.val = negative ? newCellData.val : 0 - newCellData.val
 
         let emoji = newCellData.val > 0 ? "💵" : "💸"
@@ -112,7 +110,6 @@ const tableCall = (newCellData) => {
         let ifNoDescriptoin = `${emoji}${currency} ${newCellData.category.slice(3)}`
         let descrip = newCellData.descrip ? `${emoji}${currency} ${newCellData.descrip}` : ifNoDescriptoin
 
-        // let val =
         sheets.spreadsheets.batchUpdate({
           auth: jwtClient,
           spreadsheetId: spreadsheetId,
@@ -131,7 +128,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[1]) + (newCellData.curr == 'usd' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[1].replace(',', '.')) + (newCellData.curr == 'usd' ? newCellData.val : 0)
                         }
                       },
                       {
@@ -148,7 +145,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[3]) + (newCellData.curr == 'eur' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[3].replace(',', '.')) + (newCellData.curr == 'eur' ? newCellData.val : 0)
                         }
                       },
                       {
@@ -165,7 +162,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[5]) + (newCellData.curr == 'czk' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[5].replace(',', '.')) + (newCellData.curr == 'czk' ? newCellData.val : 0)
                         }
                       },
                       {
@@ -224,11 +221,20 @@ bot.on('/add', function(msg) {
     return bot.sendMessage(id, 'Select currency', {
       replyMarkup: {
         inline_keyboard: [
-          [{ text: "Czk", callback_data: "czk" }, { text: "Usd", callback_data: "usd" }, { text: "Eur", callback_data: 'eur' }],
+          [{ text: "kč / czk", callback_data: "czk" }, { text: "$ / usd", callback_data: "usd" }, { text: "€ / eur", callback_data: 'eur' }],
         ]
       }
     }
     );
+  }
+});
+
+bot.on('/start', function(msg) {
+  console.log(1)
+  if (msg.chat.id === 707939820) {
+    var id = msg.from.id;
+    newRow = {}
+    return bot.sendMessage(id, 'use /add to add new position, \n use /clear to clear cache data');
   }
 });
 
@@ -247,8 +253,8 @@ bot.on('text', function(msg) {
     if (msg.text !== '/add' && msg.text !== '/clear') {
       var id = msg.from.id;
       if (newRow.category && newRow.curr) {
-        newRow.val = Number(msg.text.split(',')[0])
-        newRow.descrip = msg.text.split(',')[1]
+        newRow.val = Number(msg.text.split(' ')[0].replace(',', '.'))
+        newRow.descrip = msg.text.split(' ')[1]
         tableCall(newRow)
         newRow = {}
         return bot.sendMessage(id, 'Done! Use /add to add new position');
@@ -258,7 +264,6 @@ bot.on('text', function(msg) {
     }
   }
 });
-
 
 bot.on('callbackQuery', (msg) => {
   if (msg.data == 'czk') {
@@ -278,8 +283,8 @@ bot.on('callbackQuery', (msg) => {
             { text: "💸 eating out", callback_data: "💸 eating out" },
             { text: "💸 food", callback_data: "💸 food" },
           ], [
-            { text: "💸 public transport", callback_data: "💸 public transport" },
-            { text: "💸 taxi", callback_data: "💸 taxi" }
+            { text: "💸 transport", callback_data: "💸 public transport" },
+            { text: "💸 travel", callback_data: "💸 travel" }
           ],
           [
             { text: "💸 subs", callback_data: "💸 subs" },
@@ -290,22 +295,13 @@ bot.on('callbackQuery', (msg) => {
             { text: "💸 services", callback_data: "💸 services" }
           ],
           [
-            { text: "💸 chill", callback_data: "💸 chill" },
-            { text: "💸 travel", callback_data: "💸 travel" }
-          ],
-          [
             { text: "💵 salary", callback_data: "💵 salary" },
-            { text: "💵 gifts", callback_data: "💵 gifts" }
-          ],
-          [
-            { text: "💵 returns", callback_data: "💵 returns" },
-            { text: "💵 sells", callback_data: "💵 sells" }
+            { text: "💵 returns", callback_data: "💵 returns" }
           ],
           [
             { text: "No category", callback_data: "No category" }
           ]
-
-        ]
+        ].reverse()
       }
     })
   }
@@ -313,7 +309,7 @@ bot.on('callbackQuery', (msg) => {
   newRow.category = msg.data
 
   var id = msg.from.id;
-  return bot.sendMessage(id, 'Write amount please (u can add description in the message if you want to. separate by ;):')
+  return bot.sendMessage(id, 'Write amount please (u can add description in the message if you want to. separate number and text by space)')
 })
 
 bot.connect();
