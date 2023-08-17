@@ -254,7 +254,7 @@ bot.on('text', function(msg) {
       var id = msg.from.id;
       if (newRow.category && newRow.curr) {
         newRow.val = Number(msg.text.split(' ')[0].replace(',', '.'))
-        newRow.descrip = msg.text.split(' ')[1]
+        newRow.descrip = msg.text.split(' ').slice(1).join(' ')
         tableCall(newRow)
         newRow = {}
         return bot.sendMessage(id, 'Done! Use /add to add new position');
