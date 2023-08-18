@@ -95,6 +95,8 @@ const tableCall = (newCellData) => {
         } else if (newCellData.category === "💵 sells") {
           color = "#6aa84f"
           negative = true
+        } else if (newCellData.category === 'swap') {
+          negative = false
         } else if (newCellData.category) {
           color = "#cccccc"
           newCategory = newCellData.category
@@ -106,9 +108,20 @@ const tableCall = (newCellData) => {
         newCellData.val = negative ? newCellData.val : 0 - newCellData.val
 
         let emoji = newCellData.val > 0 ? "💵" : "💸"
+        let currency1 = ''
+        if (newCellData.category === 'swap') {
+          emoji = '🔄'
+          currency1 = newCellData.curr1 == 'usd' ? " ($)" : newCellData.curr1 == 'eur' ? " (€)" : newCellData.curr1 == 'czk' ? " (Kč)" : ""
+        }
         let currency = newCellData.curr == 'usd' ? " ($)" : newCellData.curr == 'eur' ? " (€)" : newCellData.curr == 'czk' ? " (Kč)" : ""
+
         let ifNoDescriptoin = `${emoji}${currency} ${newCellData.category.slice(3)}`
         let descrip = newCellData.descrip ? `${emoji}${currency} ${newCellData.descrip}` : ifNoDescriptoin
+
+        if (newCellData.category === 'swap') {
+          ifNoDescriptoin = `${emoji}${currency} ->${currency1} ${Math.abs((newCellData.val / newCellData.val1).toFixed(2))}`
+          descrip = newCellData.descrip ? `${ifNoDescriptoin} / ${newCellData.descrip}` : ifNoDescriptoin
+        }
 
         sheets.spreadsheets.batchUpdate({
           auth: jwtClient,
@@ -128,7 +141,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[1].replace(',', '.')) + (newCellData.curr == 'usd' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[1].replace(',', '.')) + (newCellData.curr == 'usd' ? newCellData.val : newCellData.curr1 == 'usd' ? newCellData.val1 : 0)
                         }
                       },
                       {
@@ -140,12 +153,12 @@ const tableCall = (newCellData) => {
                           }
                         } : null,
                         userEnteredValue: {
-                          numberValue: newCellData.curr == 'usd' ? newCellData.val : 0
+                          numberValue: newCellData.curr == 'usd' ? newCellData.val : newCellData.curr1 == 'usd' ? newCellData.val1 : 0
                         }
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[3].replace(',', '.')) + (newCellData.curr == 'eur' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[3].replace(',', '.')) + (newCellData.curr == 'eur' ? newCellData.val : newCellData.curr1 == 'eur' ? newCellData.val1 : 0)
                         }
                       },
                       {
@@ -157,12 +170,12 @@ const tableCall = (newCellData) => {
                           }
                         } : null,
                         userEnteredValue: {
-                          numberValue: newCellData.curr == 'eur' ? newCellData.val : 0
+                          numberValue: newCellData.curr == 'eur' ? newCellData.val : newCellData.curr1 == 'eur' ? newCellData.val1 : 0
                         }
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[5].replace(',', '.')) + (newCellData.curr == 'czk' ? newCellData.val : 0)
+                          numberValue: Number(lastRow[5].replace(',', '.')) + (newCellData.curr == 'czk' ? newCellData.val : newCellData.curr1 == 'czk' ? newCellData.val1 : 0)
                         }
                       },
                       {
@@ -174,7 +187,7 @@ const tableCall = (newCellData) => {
                           }
                         } : null,
                         userEnteredValue: {
-                          numberValue: newCellData.curr == 'czk' ? newCellData.val : 0
+                          numberValue: newCellData.curr == 'czk' ? newCellData.val : newCellData.curr1 == 'czk' ? newCellData.val1 : 0
                         }
                       },
                       {
@@ -234,7 +247,7 @@ bot.on('/start', function(msg) {
   if (msg.chat.id === 707939820) {
     var id = msg.from.id;
     newRow = {}
-    return bot.sendMessage(id, 'use /add to add new position, \n use /clear to clear cache data');
+    return bot.sendMessage(id, 'Use /add to add new position, \nUse /clear to clear cache data');
   }
 });
 
@@ -255,6 +268,12 @@ bot.on('text', function(msg) {
       if (newRow.category && newRow.curr) {
         newRow.val = Number(msg.text.split(' ')[0].replace(',', '.'))
         newRow.descrip = msg.text.split(' ').slice(1).join(' ')
+        if (newRow.category === 'swap') {
+          newRow.val = Number(msg.text.split(' ')[0].replace(',', '.'))
+          newRow.val1 = Number(msg.text.split(' ')[1].replace(',', '.'))
+          newRow.curr1 = msg.text.split(' ')[2]
+          newRow.descrip = msg.text.split(' ').slice(3).join(' ')
+        }
         tableCall(newRow)
         newRow = {}
         return bot.sendMessage(id, 'Done! Use /add to add new position');
@@ -276,7 +295,7 @@ bot.on('callbackQuery', (msg) => {
 
   if (msg.data.length == 3) {
     var id = msg.from.id;
-    return bot.sendMessage(id, 'Select category', {
+    return bot.sendMessage(id, 'You selected ' + newRow.curr + '! Now select category', {
       replyMarkup: {
         inline_keyboard: [
           [
@@ -299,6 +318,7 @@ bot.on('callbackQuery', (msg) => {
             { text: "💵 returns", callback_data: "💵 returns" }
           ],
           [
+            { text: "🔄 Swap", callback_data: "swap" },
             { text: "No category", callback_data: "No category" }
           ]
         ].reverse()
@@ -309,7 +329,11 @@ bot.on('callbackQuery', (msg) => {
   newRow.category = msg.data
 
   var id = msg.from.id;
-  return bot.sendMessage(id, 'Write amount please (u can add description in the message if you want to. separate number and text by space)')
+  if (newRow.category === 'swap') {
+    return bot.sendMessage(id, `You selected 🔄 ${newRow.category}! \nWrite an amounts and second currency. For example '3 4 czk' - will be swap 3 ${newRow.curr} to 4 czk.\nYou can add description in the message if you want to. Separate the number and the text by space.`)
+
+  }
+  return bot.sendMessage(id, `You selected ${newRow.category}! \nWrite an amount. You can add description in the message if you want to. Separate the number and the text by space.`)
 })
 
 bot.connect();
