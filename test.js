@@ -54,8 +54,9 @@ const tableCall = (newCellData) => {
         console.log('The API returned an error: ' + err);
       } else {
         console.log('Movie list from Google Sheets:');
-        const lastRow = (data.data.values[data.data.values.length - 1])
-        console.log(lastRow)
+        const prewRow = data.data.values.length
+        const thisRow = data.data.values.length + 1
+        const lastRow = (data.data.values[data.data.values.length - 1]) // this is lastRow for array that starts from index 0, so we need -1
         let color = "#ffffff"
         let newCategory = null
         let negative = false
@@ -141,7 +142,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[1].replace(',', '.')) + (newCellData.curr == 'usd' ? newCellData.val : newCellData.curr1 == 'usd' ? newCellData.val1 : 0)
+                          formulaValue: `=B${prewRow}+C${thisRow}`
                         }
                       },
                       {
@@ -158,7 +159,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[3].replace(',', '.')) + (newCellData.curr == 'eur' ? newCellData.val : newCellData.curr1 == 'eur' ? newCellData.val1 : 0)
+                          formulaValue: `=D${prewRow}+E${thisRow}`
                         }
                       },
                       {
@@ -175,7 +176,7 @@ const tableCall = (newCellData) => {
                       },
                       {
                         userEnteredValue: {
-                          numberValue: Number(lastRow[5].replace(',', '.')) + (newCellData.curr == 'czk' ? newCellData.val : newCellData.curr1 == 'czk' ? newCellData.val1 : 0)
+                          formulaValue: `=F${prewRow}+G${thisRow}`
                         }
                       },
                       {
@@ -198,6 +199,48 @@ const tableCall = (newCellData) => {
                       {
                         userEnteredValue: {
                           stringValue: newCategory
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          stringValue: ''
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          formulaValue: `=O${thisRow}-O${prewRow}`
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          formulaValue: `=B${thisRow}`
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          formulaValue: `=GOOGLEFINANCE("CURRENCY:EURUSD")*D${thisRow}`
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          formulaValue: `=GOOGLEFINANCE("CURRENCY:CZKUSD")*F${thisRow}`
+                        }
+                      },
+                      {
+                        userEnteredFormat: {
+                          backgroundColor: {
+                            red: hexToRgb("#d9ead3").r,
+                            green: hexToRgb("#d9ead3").g,
+                            blue: hexToRgb("#d9ead3").b
+                          }
+                        },
+                        userEnteredValue: {
+                          formulaValue: `=СУММ(L${thisRow}:N${thisRow})`
+                        }
+                      },
+                      {
+                        userEnteredValue: {
+                          formulaValue: `=O${thisRow}-$O$15`
                         }
                       }
                     ]
